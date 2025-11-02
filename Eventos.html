@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('status-validacion').innerHTML = '<div class="mensaje error">Por favor, ingrese un DNI.</div>';
       return;
     }
+    // (Validación Punto 35)
+    if (!/^[0-9]{8}$/.test(dni)) {
+      document.getElementById('status-validacion').innerHTML = '<div class="mensaje error">Error: El DNI debe tener exactamente 8 dígitos numéricos.</div>';
+      return;
+    }
     document.getElementById('btn-validar').disabled = true;
     document.getElementById('loader-validacion').style.display = 'block';
     document.getElementById('status-validacion').innerHTML = '';
@@ -32,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     manejarSubidaArchivo(this, 'ficha', 'certificadoAptitudName', 'loader-certificado', 'urlCertificadoAptitud');
   });
 
-  // (PUNTO 30) CORRECCIÓN: El listener se adjunta aquí al cargar la página y se cambia a 'input'
+  // (Punto 30) CORRECCIÓN: El listener se adjunta aquí al cargar la página y se cambia a 'input'
   document.getElementById('fechaNacimiento').addEventListener('input', calcularYMostrarEdad);
 
   document.querySelectorAll('input[name="practicaDeporte"]').forEach(el => el.addEventListener('change', () => toggleEspecifique('practicaDeporte', 'especifiqueDeporte')));
@@ -71,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // =========================================================
   // (CORRECCIÓN 8 - LISTENER DE SUBMIT)
+  // (ACTUALIZADO - PUNTO 35 y Anti-Duplicados)
   // =========================================================
   document.getElementById('registroForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -84,11 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isHtml) {
         statusDiv.innerHTML = `<div class="mensaje error">${message}</div>`;
       } else {
-        alert(message);
+        alert(message); // Cambiado a alert para que sea más obvio
       }
       
       if (elementToFocus) {
         elementToFocus.focus();
+        elementToFocus.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       
       submitButton.disabled = false;
@@ -111,23 +118,40 @@ document.addEventListener('DOMContentLoaded', () => {
       let primerInputVacio = null;
 
       if (nombresAut.length === 0) {
-        // Si el contenedor está vacío (nunca debería pasar por el DOMContentLoaded, pero por si acaso)
+        // Si el contenedor está vacío
         return validationFail('Error: Debe agregar al menos una persona autorizada.', document.getElementById('btn-add-autorizado'));
       }
       
+      // --- (INICIO MODIFICACIÓN PUNTO 35) ---
       for (let i = 0; i < nombresAut.length; i++) {
           const nombre = nombresAut[i].value.trim();
-          const dni = dnisAut[i] ? dnisAut[i].value.trim() : ''; // <-- Chequeo de seguridad
+          const dni = dnisAut[i] ? dnisAut[i].value.trim() : '';
           
           if (nombre && dni) {
+              // Si ambos campos están llenos, validar el DNI
+              if (!/^[0-9]{8}$/.test(dni)) {
+                  return validationFail('Error: El DNI de la persona autorizada (' + nombre + ') debe tener exactamente 8 dígitos numéricos.', dnisAut[i]);
+              }
               autorizadosValidos++;
-          } else if ((nombre && !dni) || (!nombre && dni)) {
-              return validationFail('Error: Por favor complete tanto el Nombre como el DNI para la persona autorizada.', (nombre ? dnisAut[i] : nombresAut[i]));
+          } else if ((!nombre && dni)) {
+                // Si no hay nombre pero sí DNI, validar DNI
+              if (!/^[0-9]{8}$/.test(dni)) {
+                  return validationFail('Error: El DNI de la persona autorizada debe tener 8 dígitos, pero el campo de Nombre está vacío.', dnisAut[i]);
+              }
+              // Si el DNI es válido pero falta el nombre
+              return validationFail('Error: Por favor complete el Nombre de la persona autorizada.', nombresAut[i]);
+
+          } else if (nombre && !dni) {
+              // Si hay nombre pero no DNI
+              return validationFail('Error: Por favor complete el DNI de la persona autorizada (' + nombre + ') (8 dígitos).', dnisAut[i]);
           }
+          
           if (!nombre && !primerInputVacio) {
               primerInputVacio = nombresAut[i];
           }
       }
+      // --- (FIN MODIFICACIÓN PUNTO 35) ---
+
 
       if (autorizadosValidos === 0) {
           return validationFail('Error: Debe ingresar al menos una persona autorizada (Nombre y DNI).', primerInputVacio);
@@ -208,18 +232,53 @@ document.addEventListener('DOMContentLoaded', () => {
       formDataObject.hermanos = [];
       const nombresHermano = document.querySelectorAll('.hermano-nombre');
       const apellidosHermano = document.querySelectorAll('.hermano-apellido');
-      const dnisHermano = document.querySelectorAll('.hermano-dni');
+      const dnisHermanoInputs = document.querySelectorAll('.hermano-dni'); // (Cambiado para .focus())
       const fechasNacHermano = document.querySelectorAll('.hermano-fechanac');
-      for (let i = 0; i < dnisHermano.length; i++) {
-        if (nombresHermano[i].value && apellidosHermano[i].value && dnisHermano[i].value && fechasNacHermano[i].value) {
-          formDataObject.hermanos.push({
-            nombre: nombresHermano[i].value,
-            apellido: apellidosHermano[i].value,
-            dni: dnisHermano[i].value,
-            fechaNac: fechasNacHermano[i].value
-          });
-        }
+
+      // --- (INICIO VALIDACIÓN ANTI-DUPLICADOS CLIENT-SIDE) ---
+      const dnisEnRegistro = new Set();
+      const principalDNI = document.getElementById('dni').value;
+      dnisEnRegistro.add(principalDNI);
+      // --- (FIN VALIDACIÓN ANTI-DUPLICADOS) ---
+
+      // --- (MODIFICACIÓN PUNTO 35 y Anti-Duplicados) ---
+      for (let i = 0; i < dnisHermanoInputs.length; i++) {
+          const nombre = nombresHermano[i].value.trim();
+          const apellido = apellidosHermano[i].value.trim();
+          const dniInput = dnisHermanoInputs[i]; // Input element
+          const dni = dniInput.value.trim();
+          const fechaNac = fechasNacHermano[i].value;
+
+          // Validar solo si hay algún dato, para no forzar hermanos opcionales
+          if (nombre || apellido || dni || fechaNac) {
+              
+              // Validar DNI primero
+              if (!/^[0-9]{8}$/.test(dni)) {
+                  return validationFail('Error: El DNI del hermano/a (' + (nombre || 'Fila ' + (i+1)) + ') debe tener exactamente 8 dígitos numéricos.', dniInput);
+              }
+              
+              // (INICIO VALIDACIÓN ANTI-DUPLICADOS)
+              if (dnisEnRegistro.has(dni)) {
+                  return validationFail('Error: El DNI ' + dni + ' está duplicado. Un hermano no puede tener el mismo DNI que el inscripto principal u otro hermano.', dniInput);
+              }
+              dnisEnRegistro.add(dni);
+              // (FIN VALIDACIÓN ANTI-DUPLICADOS)
+
+              // Validar que el resto de campos estén llenos si se empezó a llenar
+              if (!nombre) return validationFail('Error: Debe completar el Nombre del hermano/a.', nombresHermano[i]);
+              if (!apellido) return validationFail('Error: Debe completar el Apellido del hermano/a.', apellidosHermano[i]);
+              if (!fechaNac) return validationFail('Error: Debe completar la Fecha de Nacimiento del hermano/a.', fechasNacHermano[i]);
+
+              // Si todo es válido, agregarlo
+              formDataObject.hermanos.push({
+                  nombre: nombre,
+                  apellido: apellido,
+                  dni: dni,
+                  fechaNac: fechaNac
+              });
+          }
       }
+      // --- (FIN MODIFICACIÓN PUNTO 35 y Anti-Duplicados) ---
 
       // --- 6. Validación de Archivos (Foto y Aptitud) ---
       const urlFoto = formDataObject.urlFotoCarnet;
@@ -246,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       // --- Bloque CATCH general ---
-      // Si ocurre cualquier error inesperado (como el 'classs'), lo mostramos.
       console.error("Error fatal en el submit:", err);
       validationFail(`Error inesperado en el formulario: ${err.message}. Revise la consola.`);
     }

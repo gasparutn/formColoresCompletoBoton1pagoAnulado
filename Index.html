@@ -26,7 +26,7 @@
           <option value="preventa">Soy Inscripto PRE-VENTA</option>
         </select>
         <label for="dni-input">Ingrese el DNI del inscripto (sin puntos)</label>
-        <input type="tel" id="dni-input" required pattern="[0-9]{7,8}" inputmode="numeric" maxlength="8" placeholder="Ej: 12345678">
+        <input type="tel" id="dni-input" required pattern="[0-9]{8}" inputmode="numeric" maxlength="8" placeholder="Ej: 12345678" title="El DNI debe tener exactamente 8 dígitos numéricos.">
         <button type="button" id="btn-validar">Verificar DNI</button>
       </div>
       <div class="loader" id="loader-validacion">
@@ -75,7 +75,7 @@
           <input type="text" id="adultoResponsable1" name="adultoResponsable1" class="form-cache" required>
 
           <label for="dniResponsable1">DNI Responsable 1: (sin puntos)</label>
-          <input type="tel" id="dniResponsable1" name="dniResponsable1" class="form-cache" required pattern="[0-9]{7,8}" inputmode="numeric" maxlength="8">
+          <input type="tel" id="dniResponsable1" name="dniResponsable1" class="form-cache" required pattern="[0-9]{8}" inputmode="numeric" maxlength="8" title="El DNI debe tener exactamente 8 dígitos numéricos.">
 
           <label for="telAreaResp1">Teléfono Responsable 1:</label>
           <div class="grupo-telefono">

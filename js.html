@@ -34,7 +34,7 @@ function handleRegistroSuccess(response) {
       .paso2_crearPagoYEmail(response.datos, response.numeroDeTurno);
 
   } else {
-    // Si el status NO es OK_REGISTRO, es un error (ej. cupo total agotado)
+    // Si el status NO es OK_REGISTRO, es un error (ej. cupo total agotado, DNI duplicado)
     handleRegistroFailure(response);
   }
 }
@@ -101,6 +101,7 @@ Pero ocurrió un error al crear el link de pago o enviar el email: ${error.messa
 
 /**
  * (Punto 6, 12, 13, 14, 15, 18, 19, 25) Lógica de Aptitud y Comprobantes actualizada
+ * (PUNTO 35) Actualizado DNI del pagador
  */
 function handleValidationSuccess(response) {
   document.getElementById('btn-validar').disabled = false;
@@ -108,7 +109,6 @@ function handleValidationSuccess(response) {
   const statusDiv = document.getElementById('status-validacion');
 
   // (Punto 6, 12, 25) NUEVOS ESTADOS
-  // ¡¡ESTE ES EL BLOQUE QUE FALTABA Y SOLUCIONA TU PROBLEMA!!
   if (response.status === 'HERMANO_COMPLETAR') {
     statusDiv.innerHTML = `<div class="mensaje aviso" style="text-align: left;">${response.message}</div>`;
     // Marcar que este DNI está completando el formulario (Punto 6)
@@ -133,14 +133,14 @@ function handleValidationSuccess(response) {
 
   } else if (response.status === 'REGISTRO_ENCONTRADO') { 
     
-    // ESTA ES TODA TU LÓGICA EXISTENTE PARA SUBIR COMPROBANTES
+    // LÓGICA PARA SUBIR COMPROBANTES
     
     let html = '';
     const proximaCuotaMsg = response.proximaCuotaPendiente 
       ? `<br><strong>Próxima Cuota Pendiente: ${response.proximaCuotaPendiente.replace('C', 'Cuota ')}</strong>.` 
       : '';
     
-    // (MODIFICACIÓN) Genera el mensaje de estado (éxito o aviso)
+    // Genera el mensaje de estado (éxito o aviso)
     if (response.message.includes('PAGADO')) {
          html += `<div class="mensaje exito" style="margin-bottom:10px; text-align:left;"><strong>${response.message}</strong></div>`;
     } else {
@@ -163,7 +163,6 @@ function handleValidationSuccess(response) {
 </div>`;
     }
 
-    // --- (AQUÍ ESTÁ LA LÓGICA CLAVE) ---
     // Si el mensaje NO incluye "PAGADO" (es decir, adeuda), muestra la sección de pago/subida.
     if (!response.message.includes('PAGADO')) {
       html += `
@@ -208,7 +207,7 @@ function handleValidationSuccess(response) {
 <label for="externo-nombre-pagador">Nombre y Apellido (del Adulto Pagador):</label>
 <input type="text" id="externo-nombre-pagador" placeholder="Nombre Apellido (Quien paga)">
 <label for="externo-dni-pagador">DNI (del Adulto Pagador):</label>
-<input type="tel" id="externo-dni-pagador" placeholder="DNI (Quien paga)" pattern="[0-9]{7,8}" inputmode="numeric" maxlength="8">
+<input type="tel" id="externo-dni-pagador" placeholder="DNI (Quien paga)" pattern="[0-9]{8}" inputmode="numeric" maxlength="8" title="El DNI debe tener exactamente 8 dígitos numéricos.">
 </div>
 
 <div id="upload-file-container">
@@ -321,10 +320,18 @@ function handleValidationSuccess(response) {
 
           if (tipoComprobante && tipoComprobante !== 'mp_cuotas_group') {
             const nombrePagador = document.getElementById('externo-nombre-pagador').value;
-            const dniPagador = document.getElementById('externo-dni-pagador').value;
+            const dniPagadorInput = document.getElementById('externo-dni-pagador');
+            const dniPagador = dniPagadorInput.value;
+            
             if (!nombrePagador || !dniPagador) {
               alert('Por favor, complete el Nombre/Apellido y DNI del Adulto Pagador.');
               return;
+            }
+            // (Validación Punto 35)
+            if (!/^[0-9]{8}$/.test(dniPagador)) {
+                alert('Error: El DNI del Adulto Pagador debe tener exactamente 8 dígitos numéricos.');
+                dniPagadorInput.focus();
+                return;
             }
             datosExtras = { nombrePagador: nombrePagador, dniPagador: dniPagador };
           }
@@ -524,6 +531,7 @@ function iniciarTemporizador(response) {
 
 /**
  * (Punto 7, 25, 28, 30) Pre-rellena el formulario y maneja la lógica de Pre-Venta
+ * (PUNTO 33) Modificado para rellenar email de hermano y corregir fila de autorizados.
  */
 function mostrarFormulario(response) {
   document.getElementById('validacion-seccion').style.display = 'none';
@@ -533,6 +541,15 @@ function mostrarFormulario(response) {
 
   // Pre-rellenar DNI (siempre)
   document.getElementById('dni').value = response.datos.dni;
+
+  // --- INICIO DE MODIFICACIÓN (PUNTO 33.1 - Email) ---
+  // Se mueve el rellenado del email AFUERA del 'if (esPreventa)'
+  // para que también funcione para los hermanos (HERMANO_COMPLETAR).
+  if (response.datos) {
+      document.getElementById('email').value = response.datos.email || '';
+  }
+  // --- FIN DE MODIFICACIÓN (PUNTO 33.1) ---
+
 
   // Pre-rellenar campos desde 'Base de Datos' (Anterior) o 'Preventa'
   if (response.datos) {
@@ -567,6 +584,13 @@ function mostrarFormulario(response) {
     if (response.datos.personasAutorizadas) {
       const autorizados = response.datos.personasAutorizadas.split(',');
       const container = document.getElementById('autorizados-container');
+      
+      // --- INICIO DE MODIFICACIÓN (PUNTO 33.2 - Autorizados) ---
+      // Se limpia el contenedor para eliminar la fila vacía
+      // que se agregó al cargar la página (DOMContentLoaded).
+      container.innerHTML = '';
+      // --- FIN DE MODIFICACIÓN (PUNTO 33.2) ---
+
       autorizados.forEach(aut => {
         const autTrim = aut.trim();
         if (autTrim) {
@@ -582,7 +606,7 @@ function mostrarFormulario(response) {
     
     // Rellenar campos específicos de PRE-VENTA
     if (esPreventa) {
-        document.getElementById('email').value = response.datos.email || '';
+        // document.getElementById('email').value = response.datos.email || ''; // <-- Esta línea se movió arriba
         document.getElementById('jornada').value = response.datos.jornada || '';
     }
   }
@@ -866,6 +890,7 @@ function readFileAsBase64(file) {
 }
 
 // (Punto 5, 9) Añadir Autorizado
+// (PUNTO 35) Actualizado pattern de DNI
 function addAutorizadoCampos(nombre = '', dni = '') {
   const container = document.getElementById('autorizados-container');
   const div = document.createElement('div');
@@ -877,7 +902,7 @@ function addAutorizadoCampos(nombre = '', dni = '') {
   div.innerHTML = `
 <div class="campos-dinamicos">
 <input type="text" class="autorizado-nombre form-cache" placeholder="Nombre y Apellido (Relación)" value="${nombre}" ${isRequired}>
-<input type="tel" class="autorizado-dni form-cache" placeholder="DNI" maxlength="8" pattern="[0-9]{7,8}" inputmode="numeric" value="${dni}" ${isRequired}>
+<input type="tel" class="autorizado-dni form-cache" placeholder="DNI (8 dígitos)" maxlength="8" pattern="[0-9]{8}" inputmode="numeric" value="${dni}" ${isRequired} title="El DNI debe tener exactamente 8 dígitos numéricos.">
 </div>
 <button type="button" class="btn-remover" onclick="removerFila(this)">X</button>
 `;
@@ -886,6 +911,7 @@ function addAutorizadoCampos(nombre = '', dni = '') {
 
 // (Punto 5) Añadir Hermano
 // (NUEVA MODIFICACIÓN) Cambiado 'onchange' a 'oninput' y movido el div de edad.
+// (PUNTO 35) Actualizado pattern de DNI
 function addHermanoCampos() {
   const container = document.getElementById('hermanos-container');
   const div = document.createElement('div');
@@ -898,7 +924,7 @@ function addHermanoCampos() {
 <div class="hermano-campos">
   <input type="text" class="hermano-nombre form-cache" placeholder="Nombre Hermano/a" required>
   <input type="text" class="hermano-apellido form-cache" placeholder="Apellido Hermano/a" required>
-  <input type="tel" class="hermano-dni form-cache" placeholder="DNI Hermano/a" maxlength="8" pattern="[0-9]{7,8}" inputmode="numeric" required>
+  <input type="tel" class="hermano-dni form-cache" placeholder="DNI Hermano/a (8 dígitos)" maxlength="8" pattern="[0-9]{8}" inputmode="numeric" required title="El DNI debe tener exactamente 8 dígitos numéricos.">
   
   <input type="date" class="hermano-fechanac form-cache" required oninput="calcularYMostrarEdad(this.value, '${uniqueId}')">
   
@@ -917,7 +943,7 @@ function guardarFormEnCache() {
       if (!key) return; // Saltar campos dinámicos sin id/name (como los de hermanos)
 
       if (el.disabled) {
-          // Recolectar manualmente campos deshabilitados (como 'jornada' en Pre-Venta)
+          // Recolectar manually campos deshabilitados (como 'jornada' en Pre-Venta)
           if (el.id === 'jornada') {
               data[key] = el.value;
           }

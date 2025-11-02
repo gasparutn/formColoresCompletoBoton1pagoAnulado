@@ -24,7 +24,7 @@ const COL_COLEGIO_BUSQUEDA = 9; // Col I (antes H=8)
 const COL_RESPONSABLE_BUSQUEDA = 10; // Col J (antes I=9)
 const COL_TELEFONO_BUSQUEDA = 11; // Col K (antes J=10)
 // =========================================================
-// (MODIFICADO) CONSTANTES "Registros" ACTUALIZADAS (47 columnas)
+// (MODIFICADO) CONSTANTES "Registros" ACTUALIZADAS (48 columnas - Punto 34)
 // =========================================================
 const COL_NUMERO_TURNO = 1; // A
 const COL_MARCA_TEMPORAL = 2; // B
@@ -73,6 +73,7 @@ const COL_COMPROBANTE_MANUAL_CUOTA1 = 44; // AR (antes 43)
 const COL_COMPROBANTE_MANUAL_CUOTA2 = 45; // AS (antes 44)
 const COL_COMPROBANTE_MANUAL_CUOTA3 = 46; // AT (antes 45)
 const COL_ENVIAR_EMAIL_MANUAL = 47; // AU (antes 46)
+const COL_VINCULO_PRINCIPAL = 48; // AV (NUEVA - PUNTO 34)
 
 
 // (Punto 25) CONSTANTES PARA LA NUEVA HOJA "Preventa"
