@@ -27,8 +27,8 @@ function paso1_registrarRegistro(datos) {
       datos.estadoPago = "Pendiente (Efectivo)";
     } else if (datos.metodoPago === 'Transferencia') {
       datos.estadoPago = "Pendiente (Transferencia)"; // NUEVO
-    // (Punto 28) Ajuste de "Pago en Cuotas" a "Pago en 3 Cuotas" (o mantener "Pago en Cuotas" si el valor enviado no cambió)
-    } else if (datos.metodoPago === 'Pago en Cuotas') { 
+      // (Punto 28) Ajuste de "Pago en Cuotas" a "Pago en 3 Cuotas" (o mantener "Pago en Cuotas" si el valor enviado no cambió)
+    } else if (datos.metodoPago === 'Pago en Cuotas') {
       datos.estadoPago = `Pendiente (${datos.cantidadCuotas} Cuotas)`; // (datos.cantidadCuotas será 3)
     } else { // 'Pago 1 Cuota Deb/Cred MP(Total)'
       datos.estadoPago = "Pendiente";
@@ -36,12 +36,12 @@ function paso1_registrarRegistro(datos) {
 
     // (Punto 12) Si es un hermano completando, llamamos a una función diferente
     if (datos.esHermanoCompletando === true) {
-       const respuestaUpdate = actualizarDatosHermano(datos);
-       return respuestaUpdate;
+      const respuestaUpdate = actualizarDatosHermano(datos);
+      return respuestaUpdate;
     } else {
-       // Si es registro normal, llamamos a registrarDatos (que ahora maneja hermanos)
-       const respuestaRegistro = registrarDatos(datos); // registrarDatos() vive en codigo.gs
-       return respuestaRegistro;
+      // Si es registro normal, llamamos a registrarDatos (que ahora maneja hermanos)
+      const respuestaRegistro = registrarDatos(datos); // registrarDatos() vive en codigo.gs
+      return respuestaRegistro;
     }
 
   } catch (e) {
@@ -74,7 +74,7 @@ function obtenerPrecioDesdeConfig(metodoPago, cantidadCuotasStr, hojaConfig) {
       precio = precioTotal;
       montoAPagar = precio;
     } else if (metodoPago === 'Pago Efectivo (Adm del Club)' || metodoPago === 'Transferencia') {
-      precio = precioTotal; 
+      precio = precioTotal;
       montoAPagar = precio;
     }
 
@@ -85,7 +85,7 @@ function obtenerPrecioDesdeConfig(metodoPago, cantidadCuotasStr, hojaConfig) {
     if (montoAPagar === 0 && precio > 0 && (metodoPago === 'Pago Efectivo (Adm del Club)' || metodoPago === 'Transferencia')) {
       montoAPagar = precio;
     }
-    
+
     return { precio, montoAPagar };
 
   } catch (e) {
@@ -102,30 +102,30 @@ function actualizarDatosHermano(datos) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(60000);
-    
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const hojaRegistro = ss.getSheetByName(NOMBRE_HOJA_REGISTRO);
     const hojaConfig = ss.getSheetByName(NOMBRE_HOJA_CONFIG);
     const dniBuscado = limpiarDNI(datos.dni);
-    
+
     if (!hojaRegistro) throw new Error("Hoja de Registros no encontrada");
 
     const rangoDni = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
     const celdaEncontrada = rangoDni.createTextFinder(dniBuscado).matchEntireCell(true).findNext();
-    
+
     if (!celdaEncontrada) {
       return { status: 'ERROR', message: 'No se encontró el registro del hermano para actualizar.' };
     }
-    
+
     const fila = celdaEncontrada.getRow();
-    
+
     // --- CÁLCULO DE PRECIOS ---
     // (MODIFICACIÓN) Llamada a la nueva función helper para solucionar el error 'obtenerPrecioDesdeConfig is not defined'
     const { precio, montoAPagar } = obtenerPrecioDesdeConfig(datos.metodoPago, datos.cantidadCuotas, hojaConfig);
 
     const telResp1 = `(${datos.telAreaResp1}) ${datos.telNumResp1}`;
     const telResp2 = (datos.telAreaResp2 && datos.telNumResp2) ? `(${datos.telAreaResp2}) ${datos.telNumResp2}` : '';
-    
+
     // --- (MODIFICACIÓN) ---
     // Reemplazada la lógica de 'E'/'N' por la lógica completa.
     const esPreventa = (datos.tipoInscripto === 'preventa');
@@ -137,7 +137,7 @@ function actualizarDatosHermano(datos) {
     }
     // --- (FIN MODIFICACIÓN) ---
 
-    
+
     // (Punto 6, 27) Actualizar la fila del hermano con los datos completos
     hojaRegistro.getRange(fila, COL_MARCA_N_E_A).setValue(marcaNE);
     hojaRegistro.getRange(fila, COL_EMAIL).setValue(datos.email);
@@ -166,11 +166,11 @@ function actualizarDatosHermano(datos) {
     hojaRegistro.getRange(fila, COL_MONTO_A_PAGAR).setValue(montoAPagar);
 
     SpreadsheetApp.flush();
-    
+
     // (Punto 2) Necesita nombre/apellido para el email
     datos.nombre = hojaRegistro.getRange(fila, COL_NOMBRE).getValue();
     datos.apellido = hojaRegistro.getRange(fila, COL_APELLIDO).getValue();
-    
+
     return { status: 'OK_REGISTRO', message: '¡Registro de Hermano Actualizado!', numeroDeTurno: hojaRegistro.getRange(fila, COL_NUMERO_TURNO).getValue(), datos: datos };
 
   } catch (e) {
@@ -192,7 +192,7 @@ function paso2_crearPagoYEmail(datos, numeroDeTurno) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const hojaConfig = ss.getSheetByName(NOMBRE_HOJA_CONFIG);
     const pagosHabilitados = hojaConfig.getRange('B23').getValue();
-    
+
     // (MODIFICACIÓN) Añadir 'hermanos' a todos los returns
     const hermanos = datos.hermanos || [];
 
@@ -207,9 +207,9 @@ function paso2_crearPagoYEmail(datos, numeroDeTurno) {
     if (datos.metodoPago === 'Pago Efectivo (Adm del Club)' || datos.metodoPago === 'Transferencia') {
       // (Punto 29) Email automático desactivado.
       // enviarEmailConfirmacion(datos, numeroDeTurno); // Enviar email (Efectivo o Transferencia)
-      let message = (datos.metodoPago === 'Transferencia') ? 
-          '¡Registro exitoso! Por favor, realice la transferencia y luego suba el comprobante.' :
-          '¡Registro exitoso! Por favor, acérquese a la administración para completar el pago.';
+      let message = (datos.metodoPago === 'Transferencia') ?
+        '¡Registro exitoso! Por favor, realice la transferencia y luego suba el comprobante.' :
+        '¡Registro exitoso! Por favor, acérquese a la administración para completar el pago.';
       return { status: 'OK_EFECTIVO', message: message, hermanos: hermanos }; // Reutiliza OK_EFECTIVO
     }
 
@@ -217,7 +217,7 @@ function paso2_crearPagoYEmail(datos, numeroDeTurno) {
       let init_point;
       try {
         // (Punto 2) Pasar nombre/apellido
-        init_point = crearPreferenciaDePago(datos, null); 
+        init_point = crearPreferenciaDePago(datos, null);
 
         if (!init_point || !init_point.startsWith('http')) {
           return { status: 'OK_REGISTRO_SIN_LINK', message: init_point, hermanos: hermanos };
@@ -237,19 +237,19 @@ function paso2_crearPagoYEmail(datos, numeroDeTurno) {
     // (Punto 28) Ajustado
     if (datos.metodoPago === 'Pago en Cuotas') {
       const cantidadCuotas = parseInt(datos.cantidadCuotas); // (Será 3)
-      const emailLinks = {}; 
+      const emailLinks = {};
 
       try {
         // (Punto 10) Lógica de 2 o 3 cuotas
         const cuotasDisponibles = (cantidadCuotas === 2) ? [1, 2] : [1, 2, 3]; // (Será 3)
-        
+
         for (let i = 1; i <= 3; i++) {
-            if (cuotasDisponibles.includes(i)) {
-                const link = crearPreferenciaDePago(datos, `C${i}`, cantidadCuotas);
-                emailLinks[`link${i}`] = link;
-            } else {
-                emailLinks[`link${i}`] = 'N/A (No aplica)';
-            }
+          if (cuotasDisponibles.includes(i)) {
+            const link = crearPreferenciaDePago(datos, `C${i}`, cantidadCuotas);
+            emailLinks[`link${i}`] = link;
+          } else {
+            emailLinks[`link${i}`] = 'N/A (No aplica)';
+          }
         }
 
       } catch (e) {
@@ -297,7 +297,7 @@ function crearPreferenciaDePago(datos, cuotaIdentificador = null, cantidadTotalC
       if (celdaEncontrada) {
         const fila = celdaEncontrada.getRow();
         if (cuotaIdentificador) {
-          const cuotaIndex = parseInt(cuotaIdentificador.replace('C',''));
+          const cuotaIndex = parseInt(cuotaIdentificador.replace('C', ''));
           let colCuota;
           if (cuotaIndex === 1) colCuota = COL_CUOTA_1;
           else if (cuotaIndex === 2) colCuota = COL_CUOTA_2;
@@ -325,7 +325,7 @@ function crearPreferenciaDePago(datos, cuotaIdentificador = null, cantidadTotalC
 
     if (cuotaIdentificador) {
       precioInscripcion = hojaConfig.getRange("B20").getValue();
-      tituloPago = `Inscripción Colonia 2025 - Cuota ${cuotaIdentificador.replace('C','')} de ${cantidadTotalCuotas}`;
+      tituloPago = `Inscripción Colonia 2025 - Cuota ${cuotaIdentificador.replace('C', '')} de ${cantidadTotalCuotas}`;
       externalReference = `${dniLimpio}-${cuotaIdentificador}`;
     } else {
       precioInscripcion = hojaConfig.getRange("B14").getValue();
@@ -527,7 +527,7 @@ function actualizarEstadoEnPlanilla(dni, datosActualizacion) {
         enviarEmailPagoConfirmado(rowData); // (Punto 29) Este email SÍ se envía
 
       } else {
-        const cuotaIndex = parseInt(cuotaNum.replace('C',''));
+        const cuotaIndex = parseInt(cuotaNum.replace('C', ''));
         let columnaCuota;
         if (cuotaIndex === 1) columnaCuota = COL_CUOTA_1;
         else if (cuotaIndex === 2) columnaCuota = COL_CUOTA_2;
@@ -544,7 +544,7 @@ function actualizarEstadoEnPlanilla(dni, datosActualizacion) {
         const celdaMonto = hoja.getRange(fila, COL_MONTO_A_PAGAR);
         const montoAnterior = celdaMonto.getValue() || 0;
         celdaMonto.setValue(parseFloat(montoAnterior) + parseFloat(datosActualizacion.montoPagado));
-        
+
         Logger.log(`Éxito: Fila ${fila} (${cuotaNum}) marcada como PAGADA para DNI ${dni}.`);
       }
       // --- (FIN BLOQUEO) ---

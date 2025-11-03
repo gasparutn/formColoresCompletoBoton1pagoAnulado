@@ -23,20 +23,23 @@
     --color-negro: #000000;
   }
 
-body::before {
+  body::before {
     z-index: -2;
     content: "";
     position: fixed;
     top: 0;
-    left: 0; /* <-- CAMBIO: De 30px a 0 para centrarla correctamente */
+    left: 0;
+    /* <-- CAMBIO: De 30px a 0 para centrarla correctamente */
     height: 100vh;
     width: 100vw;
-   
+
     background-image: url('https://i.imgur.com/1F0Eoqy.jpeg');
-    background-size: contain; /* <-- MODIFICADO: Vuelto a 'contain' para mobile */
+    background-size: contain;
+    /* <-- MODIFICADO: Vuelto a 'contain' para mobile */
     background-position: center;
     background-attachment: fixed;
-    padding: 20px; /* <-- MODIFICADO: Restaurado padding original */
+    padding: 20px;
+    /* <-- MODIFICADO: Restaurado padding original */
     background-repeat: no-repeat;
   }
 
@@ -56,9 +59,10 @@ body::before {
   .container {
     max-width: 800px;
     margin: auto;
-   
+
     padding: 25px;
-    background-color: rgba(255, 255, 255, 0.70); /* <-- Opacidad reducida de 0.75 */
+    background-color: rgba(255, 255, 255, 0.70);
+    /* <-- Opacidad reducida de 0.75 */
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     /* (V) Agregamos border-radius para un mejor look */
@@ -83,7 +87,8 @@ body::before {
   }
 
   .form-section {
-    background-color: rgba(255, 255, 255, 0.65); /* <-- Opacidad reducida de 0.7 */
+    background-color: rgba(255, 255, 255, 0.65);
+    /* <-- Opacidad reducida de 0.7 */
     /* Fondo blanco con opacidad para cada sección del formulario */
     padding: 20px;
     margin-bottom: 20px;
@@ -364,7 +369,8 @@ body::before {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%; /* <-- CAMBIO: De 94% a 100% para igualar al botón rojo */
+    width: 100%;
+    /* <-- CAMBIO: De 94% a 100% para igualar al botón rojo */
     padding: 15px;
     border-radius: 6px;
     font-size: 1.1em;
@@ -402,22 +408,26 @@ body::before {
   }
 
   /* --- INICIO ESTILOS PUNTO 15 (Movidos de Index.html) --- */
-  
+
   /* (Punto 15) Estilos para el nuevo formulario de carga */
   #cuota-selector-container,
   #datos-externo-container,
   #upload-file-container {
-    display: none; /* Ocultos por defecto */
+    display: none;
+    /* Ocultos por defecto */
     margin-top: 15px;
     padding: 10px;
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: 4px;
   }
+
   #comprobante-manual-seccion label {
-    margin-top: 10px; /* Espacio extra para labels */
+    margin-top: 10px;
+    /* Espacio extra para labels */
   }
- #btn-submit-comprobante-manual {
+
+  #btn-submit-comprobante-manual {
     background-color: var(--color-exito, #28a745);
     width: 100%;
     margin-top: 15px;
@@ -429,10 +439,12 @@ body::before {
     border: none;
     cursor: pointer;
   }
+
   #btn-submit-comprobante-manual:hover {
     background-color: #218838;
   }
- #btn-finalizar-upload {
+
+  #btn-finalizar-upload {
     background-color: var(--color-error, #dc3545);
     width: 100%;
     margin-top: 10px;
@@ -444,71 +456,86 @@ body::before {
     border: none;
     cursor: pointer;
   }
+
   #btn-finalizar-upload:hover {
     background-color: #c82333;
   }
+
   #comprobante-manual-seccion input[type="text"],
   #comprobante-manual-seccion select {
-    width: 100%; /* Asegurar que los inputs usen todo el ancho */
-    box-sizing: border-box; /* Incluir padding en el ancho */
+    width: 100%;
+    /* Asegurar que los inputs usen todo el ancho */
+    box-sizing: border-box;
+    /* Incluir padding en el ancho */
   }
-  
+
   /* --- Nuevos Estilos para Contraste de Fondo --- */
-.contrasted-background {
-    filter: contrast(120%) brightness(85%); /* Aumenta contraste 20%, oscurece 15% */
-}
+  .contrasted-background {
+    filter: contrast(120%) brightness(85%);
+    /* Aumenta contraste 20%, oscurece 15% */
+  }
 
-/* Opcional: si quieres un contraste más fuerte */
-.contrasted-background-strong {
-    filter: contrast(140%) brightness(75%); /* Aumenta contraste 40%, oscurece 25% */
-}
+  /* Opcional: si quieres un contraste más fuerte */
+  .contrasted-background-strong {
+    filter: contrast(140%) brightness(75%);
+    /* Aumenta contraste 40%, oscurece 25% */
+  }
 
-/* Opcional: si quieres un efecto más sutil */
-.contrasted-background-subtle {
-    filter: contrast(110%) brightness(90%); /* Aumenta contraste 10%, oscurece 10% */
-}
+  /* Opcional: si quieres un efecto más sutil */
+  .contrasted-background-subtle {
+    filter: contrast(110%) brightness(90%);
+    /* Aumenta contraste 10%, oscurece 10% */
+  }
 
-/* --- (NUEVOS ESTILOS) Mensaje Post-Registro Hermanos --- */
-.hermanos-post-registro {
-  background-color: #fff3cd; /* var(--color-aviso) fondo */
-  color: #856404; /* var(--color-aviso) texto */
-  border: 1px solid #ffeeba;
-  border-radius: 8px;
-  padding: 20px;
-  margin-top: 25px;
-  text-align: left;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.hermanos-post-registro h4 {
-  color: #856404;
-  text-align: center;
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.2em;
-}
-.hermanos-post-registro p {
-  margin: 10px 0;
-}
-.hermanos-post-registro ol,
-.hermanos-post-registro ul {
-  margin-left: 20px;
-  padding-left: 15px;
-}
-.hermanos-post-registro li {
-  margin-bottom: 5px;
-}
-.hermanos-post-registro-lista {
-  list-style-type: none;
-  padding-left: 5px;
-  font-size: 0.95em;
-}
-.hermanos-post-registro-lista .check {
-  color: var(--color-exito);
-  font-weight: bold;
-}
-.hermanos-post-registro-lista .cruz {
-  color: var(--color-error);
-  font-weight: bold;
-}
+  /* --- (NUEVOS ESTILOS) Mensaje Post-Registro Hermanos --- */
+  .hermanos-post-registro {
+    background-color: #fff3cd;
+    /* var(--color-aviso) fondo */
+    color: #856404;
+    /* var(--color-aviso) texto */
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
 
+  .hermanos-post-registro h4 {
+    color: #856404;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+  }
+
+  .hermanos-post-registro p {
+    margin: 10px 0;
+  }
+
+  .hermanos-post-registro ol,
+  .hermanos-post-registro ul {
+    margin-left: 20px;
+    padding-left: 15px;
+  }
+
+  .hermanos-post-registro li {
+    margin-bottom: 5px;
+  }
+
+  .hermanos-post-registro-lista {
+    list-style-type: none;
+    padding-left: 5px;
+    font-size: 0.95em;
+  }
+
+  .hermanos-post-registro-lista .check {
+    color: var(--color-exito);
+    font-weight: bold;
+  }
+
+  .hermanos-post-registro-lista .cruz {
+    color: var(--color-error);
+    font-weight: bold;
+  }
 </style>

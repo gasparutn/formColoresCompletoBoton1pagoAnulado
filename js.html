@@ -8,6 +8,7 @@ let numeroDeTurnoGuardado = null;
 // DEFINICIONES DE FUNCIONES
 // =========================================================
 
+// (MODIFICADO - PUNTO B) Mensajes del Loader
 function handleRegistroSuccess(response) {
   if (response.status === 'OK_REGISTRO') {
     limpiarCache();
@@ -22,9 +23,11 @@ function handleRegistroSuccess(response) {
         <strong>¡Atención!</strong> El cupo para Jornada Extendida se agotó.<br>
         Su registro fue guardado exitosamente en <strong>Jornada Normal</strong>.
       </div>`;
-      loaderText.textContent = `¡Registro guardado (con cambio de jornada)! Creando link de pago...`;
+      // (MODIFICADO - PUNTO B)
+      loaderText.textContent = `¡Registro guardado (con cambio de jornada) con exito!!!`;
     } else {
-      loaderText.textContent = `¡Registro guardado! Creando link de pago y enviando email...`;
+      // (MODIFICADO - PUNTO B)
+      loaderText.textContent = `¡Registro guardado con exito!`;
     }
     // --- (FIN MODIFICACIÓN) ---
 
@@ -46,6 +49,7 @@ function handleRegistroFailure(error) {
   document.getElementById('status-registro').innerHTML = `<div class="mensaje error"><strong>Error al Registrar:</strong> ${errorMessage}</div>`;
 }
 
+// (MODIFICADO - PUNTO A) Mensaje de Éxito Final
 function handlePagoSuccess(response) {
   document.getElementById('registroForm').style.display = 'none';
   document.getElementById('loader-registro').style.display = 'none';
@@ -53,9 +57,16 @@ function handlePagoSuccess(response) {
 
   // (Punto 29) MODIFICADO: Ya no se muestra el botón de MP. Se muestra un mensaje de éxito.
   if (response && response.status === 'OK_PAGO' && response.init_point) {
+    
+    // (MODIFICADO - PUNTO A) Mensaje de Hermanos
+    // Comprobar si hay hermanos en la respuesta
+    const mensajeHermanos = (response.hermanos && response.hermanos.length > 0) 
+      ? `Recuerde que si ingresó hermanos en incripcion, deberá volver a ingresar al formulario y validad nuevamente con el DNI para acceder al formulario y completar la información faltante requerida.`
+      : ``; // Si no hay hermanos, no mostrar nada extra
+    
     statusDiv.innerHTML = `
 <div class="mensaje exito">¡Inscripción registrada con éxito!</div>
-<p style="text-align:center; font-weight:bold; margin:20px 0;">Para abonar, deberá volver a ingresar al formulario con su DNI y presionar "Verificar DNI" para ver sus opciones de pago.</p>
+<p style="text-align:center; font-weight:bold; margin:20px 0;">${mensajeHermanos}</p>
 <button type="button" id="btn-volver-form-limpio" class="btn-final-volver">Volver a Iniciar (Formulario Limpio)</button>
 `;
     document.getElementById('btn-volver-form-limpio').addEventListener('click', function() {
@@ -64,8 +75,14 @@ function handlePagoSuccess(response) {
 
     // (Punto 10) OK_EFECTIVO ahora maneja efectivo y transferencia
   } else if (response && (response.status === 'OK_EFECTIVO' || response.status === 'OK_REGISTRO_SIN_PAGO')) {
+    
+    // (MODIFICADO - PUNTO A) Mensaje de Hermanos
+    const mensajeHermanos = (response.hermanos && response.hermanos.length > 0) 
+      ? `<br>Recuerde que si ingresó hermanos en incripcion, deberá volver a ingresar al formulario y validad nuevamente con el DNI para acceder al formulario y completar la información faltante requerida.`
+      : ``; // Si no hay hermanos, no mostrar nada extra
+
     statusDiv.innerHTML = `
-<div class="mensaje exito">${response.message}</div>
+<div class="mensaje exito">${response.message}${mensajeHermanos}</div>
 <button type="button" id="btn-volver-form-limpio" class="btn-final-volver">Volver a Iniciar (Formulario Limpio)</button>
 `;
     document.getElementById('btn-volver-form-limpio').addEventListener('click', function() {
@@ -532,6 +549,7 @@ function iniciarTemporizador(response) {
 /**
  * (Punto 7, 25, 28, 30) Pre-rellena el formulario y maneja la lógica de Pre-Venta
  * (PUNTO 33) Modificado para rellenar email de hermano y corregir fila de autorizados.
+ * (NUEVO - PUNTO C) Añadida lógica para 'pagoTotalHabilitado'
  */
 function mostrarFormulario(response) {
   document.getElementById('validacion-seccion').style.display = 'none';
@@ -623,6 +641,17 @@ function mostrarFormulario(response) {
       msgCupo.style.display = 'inline';
     }
   }
+  
+  // (NUEVO - PUNTO C) Habilitar/Deshabilitar Pago Total
+  const opcionPagoTotal = document.querySelector('#metodoPago option[value="Pago 1 Cuota Deb/Cred MP(Total)"]');
+  if (opcionPagoTotal) {
+    // Habilitar la opción si 'pagoTotalHabilitado' es true, de lo contrario se queda deshabilitada (como está en Index.html)
+    if (response.pagoTotalHabilitado === true) {
+      opcionPagoTotal.disabled = false;
+    } else {
+      opcionPagoTotal.disabled = true;
+    }
+  }
 
   // (Punto 25 - CORRECCIÓN 6) LÓGICA DE PRE-VENTA
   if (esPreventa) {
@@ -672,6 +701,7 @@ function mostrarFormulario(response) {
   // (Punto 28) Restauradas las funciones de pago
   toggleCantidadCuotas();
   toggleTransferenciaInfo();
+  toggleCuotasInfo();
 }
 
 
@@ -862,10 +892,13 @@ function toggleCantidadCuotas() {
   }
 }
 
+// (MODIFICADO - PUNTO 33) Esta función ahora controla SOLO el div fusionado
 function toggleCuotasInfo() {
   const metodoPago = document.getElementById('metodoPago').value;
-  const container = document.getElementById('cuotas-info');
-  container.style.display = (metodoPago === 'Pago en Cuotas') ? 'block' : 'none';
+  const show = (metodoPago === 'Pago en Cuotas');
+  
+  const containerAlias = document.getElementById('cuotas-transferencia-info');
+  if(containerAlias) containerAlias.style.display = show ? 'block' : 'none';
 }
 
 // (Punto 10) Restaurada
@@ -874,6 +907,14 @@ function toggleTransferenciaInfo() {
   const container = document.getElementById('transferencia-info');
   container.style.display = (metodoPago === 'Transferencia') ? 'block' : 'none';
 }
+
+// (ELIMINADO - PUNTO 33) Esta función ya no es necesaria
+/*
+function toggleCuotasTransferenciaInfo() {
+  ...
+}
+*/
+
 
 function removerFila(boton) {
   boton.parentElement.remove();
@@ -910,24 +951,26 @@ function addAutorizadoCampos(nombre = '', dni = '') {
 }
 
 // (Punto 5) Añadir Hermano
-// (NUEVA MODIFICACIÓN) Cambiado 'onchange' a 'oninput' y movido el div de edad.
-// (PUNTO 35) Actualizado pattern de DNI
+// (MODIFICADO - REQ 2) Añadidos placeholders de error inline
 function addHermanoCampos() {
   const container = document.getElementById('hermanos-container');
   const div = document.createElement('div');
   div.className = 'fila-dinamica';
   const uniqueId = 'hermano_edad_' + container.children.length;
 
-  // (MODIFICACIÓN) Se mueve el div de edad DENTRO del .hermano-campos
+  // (MODIFICADO) Se mueve el div de edad DENTRO del .hermano-campos
   // y se le da un estilo para que ocupe las 2 columnas del grid.
   div.innerHTML = `
 <div class="hermano-campos">
   <input type="text" class="hermano-nombre form-cache" placeholder="Nombre Hermano/a" required>
   <input type="text" class="hermano-apellido form-cache" placeholder="Apellido Hermano/a" required>
-  <input type="tel" class="hermano-dni form-cache" placeholder="DNI Hermano/a (8 dígitos)" maxlength="8" pattern="[0-9]{8}" inputmode="numeric" required title="El DNI debe tener exactamente 8 dígitos numéricos.">
   
+  <input type="tel" class="hermano-dni form-cache" placeholder="DNI Hermano/a (8 dígitos)" maxlength="8" pattern="[0-9]{8}" inputmode="numeric" required title="El DNI debe tener exactamente 8 dígitos numéricos.">
   <input type="date" class="hermano-fechanac form-cache" required oninput="calcularYMostrarEdad(this.value, '${uniqueId}')">
   
+  <div class="hermano-dni-error" style="color: red; font-size: 0.85em; grid-column: 1 / 2; margin-top: -10px; min-height: 1.2em;"></div>
+  <div class="hermano-fecha-error" style="color: red; font-size: 0.85em; grid-column: 2 / 3; margin-top: -10px; min-height: 1.2em;"></div>
+
   <div id="${uniqueId}" class="edad-calculada" style="grid-column: 1 / -1; font-size: 0.9em; margin-top: 5px; margin-left: 5px;"></div>
 </div>
 <button type="button" class="btn-remover" onclick="removerFila(this)">X</button>

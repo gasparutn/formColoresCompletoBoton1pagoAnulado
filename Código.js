@@ -198,7 +198,7 @@ function registrarDatos(datos) {
         'Turno Principal' // AV (NUEVA - PUNTO 34)
       ]);
       // Si la hoja es nueva, el rango de DNIs debe ser re-evaluado (o será null)
-      rangoDniRegistro = null; 
+      rangoDniRegistro = null;
     }
 
     // --- CÁLCULO DE PRECIOS ---
@@ -206,28 +206,28 @@ function registrarDatos(datos) {
 
 
     // --- REGISTRO DEL INSCRIPTO PRINCIPAL ---
-    
+
     const lastRow = hojaRegistro.getLastRow();
     let ultimoTurno = 0;
     if (lastRow > 1) {
       const rangoTurnos = hojaRegistro.getRange(2, COL_NUMERO_TURNO, lastRow - 1, 1).getValues();
-      const turnosReales = rangoTurnos.map(f => f[0]).filter(Number); 
+      const turnosReales = rangoTurnos.map(f => f[0]).filter(Number);
       if (turnosReales.length > 0) {
-        ultimoTurno = Math.max(...turnosReales); 
+        ultimoTurno = Math.max(...turnosReales);
       } else {
-        ultimoTurno = 0; 
+        ultimoTurno = 0;
       }
     } else {
-      ultimoTurno = 0; 
+      ultimoTurno = 0;
     }
-    const nuevoNumeroDeTurno = ultimoTurno + 1; 
+    const nuevoNumeroDeTurno = ultimoTurno + 1;
 
 
     // (MODIFICACIÓN) Cálculo de Edad (para el grupo)
     const edadCalculada = calcularEdad(datos.fechaNacimiento);
     // const edadFormateada = `${edadCalculada.anos}a, ${edadCalculada.meses}m, ${edadCalculada.dias}d`; // ¡¡¡ELIMINADO!!!
     const textoGrupo = `GRUPO ${edadCalculada.anos} AÑOS`; // ¡¡¡NUEVO!!!
-    
+
     const fechaObj = new Date(datos.fechaNacimiento);
     const fechaFormateada = Utilities.formatDate(fechaObj, ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd');
 
@@ -237,7 +237,7 @@ function registrarDatos(datos) {
 
     if (datos.jornada === 'Jornada Normal extendida') {
       marcaNE = esPreventa ? "Extendida (Pre-venta)" : "Extendida";
-    } else { 
+    } else {
       marcaNE = esPreventa ? "Normal (Pre-Venta)" : "Normal";
     }
 
@@ -276,11 +276,11 @@ function registrarDatos(datos) {
     ];
     hojaRegistro.appendRow(filaNueva);
     const filaInsertada = hojaRegistro.getLastRow(); // Obtener la fila recién insertada
-    
+
     // (¡¡¡NUEVO!!!) Actualizar el rango de DNIs para que incluya la fila que acabamos de agregar
     // Esto es crucial para que el chequeo de hermanos no falle si la hoja estaba vacía
     if (rangoDniRegistro == null) {
-       rangoDniRegistro = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
+      rangoDniRegistro = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
     }
 
 
@@ -294,40 +294,40 @@ function registrarDatos(datos) {
     // --- (Punto 5, 11) REGISTRO DE HERMANOS (Validación Anti-Duplicados Añadida) ---
     if (datos.hermanos && datos.hermanos.length > 0) {
       const hojaBusqueda = ss.getSheetByName(NOMBRE_HOJA_BUSQUEDA);
-      
+
       // (INICIO VALIDACIÓN DUPLICADOS)
       // Recargamos el rango de DNIs por si acaso (aunque ya debería estar bien)
       rangoDniRegistro = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
       let dnisHermanosEnEsteLote = new Set();
       // (FIN VALIDACIÓN DUPLICADOS)
-      
-      let proximoTurnoHermano = nuevoNumeroDeTurno; 
+
+      let proximoTurnoHermano = nuevoNumeroDeTurno;
 
       for (const hermano of datos.hermanos) {
-        proximoTurnoHermano++; 
-        
+        proximoTurnoHermano++;
+
         const dniHermano = limpiarDNI(hermano.dni);
-        if (!dniHermano || !hermano.nombre || !hermano.apellido || !hermano.fechaNac) continue; 
+        if (!dniHermano || !hermano.nombre || !hermano.apellido || !hermano.fechaNac) continue;
 
         // =========================================================
         // (VALIDACIÓN ANTI-DUPLICADOS - HERMANOS)
         // =========================================================
         // 1. Chequear contra el principal
         if (dniHermano === dniBuscado) {
-            Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} es igual al DNI principal.`);
-            return { status: 'ERROR', message: `El DNI del hermano/a (${hermano.nombre}) no puede ser igual al del inscripto principal.` };
+          Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} es igual al DNI principal.`);
+          return { status: 'ERROR', message: `El DNI del hermano/a (${hermano.nombre}) no puede ser igual al del inscripto principal.` };
         }
         // 2. Chequear contra otros hermanos en el mismo formulario
         if (dnisHermanosEnEsteLote.has(dniHermano)) {
-            Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} está duplicado en el formulario.`);
-            return { status: 'ERROR', message: `El DNI ${dniHermano} está repetido entre los hermanos. Por favor, revise los datos.` };
+          Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} está duplicado en el formulario.`);
+          return { status: 'ERROR', message: `El DNI ${dniHermano} está repetido entre los hermanos. Por favor, revise los datos.` };
         }
         dnisHermanosEnEsteLote.add(dniHermano);
         // 3. Chequear contra la hoja de Registros (incluyendo al principal que acabamos de agregar)
         const celdaRegistroHermano = rangoDniRegistro.createTextFinder(dniHermano).matchEntireCell(true).findNext();
         if (celdaRegistroHermano) {
-            Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} ya existe en la fila ${celdaRegistroHermano.getRow()}.`);
-            return { status: 'ERROR', message: `El DNI del hermano/a (${hermano.nombre}: ${dniHermano}) ya se encuentra registrado. No se puede crear un duplicado.` };
+          Logger.log(`BLOQUEO DE REGISTRO: El DNI de hermano ${dniHermano} ya existe en la fila ${celdaRegistroHermano.getRow()}.`);
+          return { status: 'ERROR', message: `El DNI del hermano/a (${hermano.nombre}: ${dniHermano}) ya se encuentra registrado. No se puede crear un duplicado.` };
         }
         // =========================================================
         // (FIN DE LA VALIDACIÓN)
@@ -375,13 +375,13 @@ function registrarDatos(datos) {
         ];
         hojaRegistro.appendRow(filaHermano);
         const filaHermanoInsertada = hojaRegistro.getLastRow();
-        
+
         // (¡¡¡NUEVO!!!) Aplicar color al grupo del hermano
         aplicarColorGrupo(hojaRegistro, filaHermanoInsertada, textoGrupoHermano, hojaConfig);
-        
+
         hojaRegistro.getRange(filaHermanoInsertada, COL_ENVIAR_EMAIL_MANUAL).setDataValidation(rule); // (Punto 17, 27) Columna AU
         hojaRegistro.getRange(filaHermanoInsertada, COL_VINCULO_PRINCIPAL).setNumberFormat("0"); // (PUNTO 34)
-        
+
         // (¡¡¡IMPORTANTE!!!) Actualizar el rango de DNIs para el siguiente loop de hermano
         rangoDniRegistro = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
       }
@@ -418,14 +418,14 @@ function subirComprobanteManual(dni, fileData, tipoComprobante, datosExtras) {
     if (!dniLimpio || !fileData || !tipoComprobante) {
       return { status: 'ERROR', message: 'Faltan datos (DNI, archivo o tipo de comprobante).' };
     }
-    
+
     // Validar que los datos del pagador (datosExtras) llegaron
     // (Validación DNI Punto 35)
     if (!datosExtras || !datosExtras.nombrePagador || !datosExtras.dniPagador) {
-        return { status: 'ERROR', message: 'Faltan los datos del adulto pagador (Nombre o DNI).' };
+      return { status: 'ERROR', message: 'Faltan los datos del adulto pagador (Nombre o DNI).' };
     }
     if (!/^[0-9]{8}$/.test(datosExtras.dniPagador)) {
-       return { status: 'ERROR', message: 'El DNI del pagador debe tener 8 dígitos.' };
+      return { status: 'ERROR', message: 'El DNI del pagador debe tener 8 dígitos.' };
     }
 
     // Usar el DNI del inscripto para la carpeta
@@ -476,7 +476,7 @@ function subirComprobanteManual(dni, fileData, tipoComprobante, datosExtras) {
 
       // 3. Guardar SOLO el link en la columna de archivo correspondiente
       hoja.getRange(fila, columnaDestinoArchivo).setValue(fileUrl);
-      
+
       // 4. Actualizar estado
       hoja.getRange(fila, COL_ESTADO_PAGO).setValue("En revisión");
 
@@ -516,8 +516,8 @@ function aplicarColorGrupo(hoja, fila, textoGrupo, hojaConfig) {
       // Compara el texto de la Col A (ej. "GRUPO 4 AÑOS")
       if (valoresGrupos[i][0] == textoGrupo) {
         // Obtiene el color de la Col B (índice 1)
-        const color = coloresGrupos[i][1]; 
-        
+        const color = coloresGrupos[i][1];
+
         // Aplica el color a la celda del grupo (Col I, constante 9)
         hoja.getRange(fila, COL_GRUPOS).setBackground(color);
         return; // Termina la función
@@ -606,15 +606,15 @@ function obtenerEstadoRegistro() {
 
     let registrosActuales = 0;
     let registrosJornadaExtendida = 0;
-    
+
     if (hojaRegistro && hojaRegistro.getLastRow() > 1) {
       const lastRow = hojaRegistro.getLastRow();
-      
+
       // (NUEVA MODIFICACIÓN) Contar registros basados en la Columna A (N° de Turno)
       const rangoTurnos = hojaRegistro.getRange(2, COL_NUMERO_TURNO, lastRow - 1, 1);
       const valoresTurnos = rangoTurnos.getValues();
       registrosActuales = valoresTurnos.filter(fila => fila[0] != null && fila[0] != "").length;
-      
+
       // El conteo de Jornada Extendida sigue igual
       const data = hojaRegistro.getRange(2, COL_MARCA_N_E_A, lastRow - 1, 1).getValues();
       registrosJornadaExtendida = data.filter(row => String(row[0]).startsWith('Extendida')).length;
@@ -638,47 +638,62 @@ function obtenerEstadoRegistro() {
 
 
 // =========================================================
-// (Punto 1, 6, 7, 12, 25) validarAcceso (COMPLETAMENTE REESTRUCTURADO)
-// (Punto 35) Añadida validación de 8 dígitos al inicio.
-// (CORRECCIÓN BUG PRE-VENTA)
+// (MODIFICADO - CORRECCIÓN DE BUG DE CUPO)
 // =========================================================
 function validarAcceso(dni, tipoInscripto) {
   try {
-    // 1. OBTENER ESTADO GENERAL Y VALIDACIONES BÁSICAS
-    const estado = obtenerEstadoRegistro();
-    if (estado.cierreManual) return { status: 'CERRADO', message: 'El formulario se encuentra cerrado por mantenimiento.' };
-    
-    // (Validación Punto 35)
+    // 1. VALIDACIONES BÁSICAS
     if (!dni) return { status: 'ERROR', message: 'El DNI no puede estar vacío.' };
     if (!/^[0-9]{8}$/.test(dni.trim())) {
       return { status: 'ERROR', message: 'El DNI debe tener exactamente 8 dígitos numéricos.' };
     }
-    const dniLimpio = limpiarDNI(dni); // limpiarDNI ahora es seguro
-    
-    // El cupo máximo general solo aplica a 'nuevos'
-    if (estado.alcanzado && tipoInscripto === 'nuevo') return { status: 'LIMITE_ALCANZADO', message: 'Se ha alcanzado el cupo máximo para nuevos registros.' };
+    const dniLimpio = limpiarDNI(dni);
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID); // <-- Variable 'ss' definida aquí
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const hojaConfig = ss.getSheetByName(NOMBRE_HOJA_CONFIG);
+    if (!hojaConfig) return { status: 'ERROR', message: `La hoja de configuración "${NOMBRE_HOJA_CONFIG}" no fue encontrada.` };
 
-    // 2. VERIFICAR SI EL DNI YA ESTÁ EN LA HOJA DE "Registros" (esto aplica a todos)
+    // 2. (¡¡¡NUEVO ORDEN!!!) VERIFICAR SI EL DNI YA ESTÁ EN "Registros"
+    // Esto captura a los hermanos y a los que vuelven a pagar/subir ANTES del chequeo de cupo.
     const hojaRegistro = ss.getSheetByName(NOMBRE_HOJA_REGISTRO);
     if (hojaRegistro && hojaRegistro.getLastRow() > 1) {
       const rangoDniRegistro = hojaRegistro.getRange(2, COL_DNI_INSCRIPTO, hojaRegistro.getLastRow() - 1, 1);
       const celdaRegistro = rangoDniRegistro.createTextFinder(dniLimpio).matchEntireCell(true).findNext();
+
       if (celdaRegistro) {
-         // Si ya existe, se devuelve el estado de pago, sin importar el tipo de inscripto seleccionado
-         // (SOLUCIÓN AL ERROR): Se pasa 'ss' a la función
-         return gestionarUsuarioYaRegistrado(ss, hojaRegistro, celdaRegistro.getRow(), dniLimpio, estado);
+        // ¡ENCONTRADO! Es un hermano o alguien volviendo.
+        // Obtener el estado (cierre manual) y B22 (pago total) ANTES de pasarlo
+        // No necesitamos el chequeo de 'estado.alcanzado' aquí.
+        const estado = obtenerEstadoRegistro();
+        if (estado.cierreManual) return { status: 'CERRADO', message: 'El formulario se encuentra cerrado por mantenimiento.' };
+
+        const pagoTotalHabilitado = hojaConfig.getRange('B22').getValue() === true;
+
+        // Llamar a la función que maneja usuarios existentes. ESTA FUNCIÓN NO CHEQUEA CUPO.
+        return gestionarUsuarioYaRegistrado(ss, hojaRegistro, celdaRegistro.getRow(), dniLimpio, estado, pagoTotalHabilitado, tipoInscripto);
       }
     }
 
-    // 3. LÓGICA SEGÚN EL TIPO DE INSCRIPTO
-    
+    // 3. SI LLEGA AQUÍ, ES UN INSCRIPTO 100% NUEVO.
+    // AHORA SÍ CHEQUEAR ESTADO Y CUPO.
+    const estado = obtenerEstadoRegistro();
+    if (estado.cierreManual) return { status: 'CERRADO', message: 'El formulario se encuentra cerrado por mantenimiento.' };
+
+    // ¡¡¡EL CHEQUEO DE CUPO AHORA ESTÁ AQUÍ!!!
+    // (Se mantiene la excepción de preventa)
+    if (estado.alcanzado && tipoInscripto !== 'preventa') {
+      // Si es 'nuevo' o 'anterior' (y no está en Registros), y el cupo está lleno, bloquear.
+      return { status: 'LIMITE_ALCANZADO', message: 'Se ha alcanzado el cupo máximo para nuevos registros.' };
+    }
+
+    // 4. CONTINUAR CON LÓGICA DE NUEVO INSCRIPTO (Preventa, Anterior, Nuevo)
+    const pagoTotalHabilitado = hojaConfig.getRange('B22').getValue() === true;
+
     // (Punto 25) CASO 1: INSCRIPTO PRE-VENTA
     if (tipoInscripto === 'preventa') {
       const hojaPreventa = ss.getSheetByName(NOMBRE_HOJA_PREVENTA);
       if (!hojaPreventa) return { status: 'ERROR', message: `La hoja de configuración "${NOMBRE_HOJA_PREVENTA}" no fue encontrada.` };
-      
+
       const rangoDniPreventa = hojaPreventa.getRange(2, COL_PREVENTA_DNI, hojaPreventa.getLastRow() - 1, 1);
       const celdaEncontrada = rangoDniPreventa.createTextFinder(dniLimpio).matchEntireCell(true).findNext();
 
@@ -687,15 +702,15 @@ function validarAcceso(dni, tipoInscripto) {
       }
 
       const fila = hojaPreventa.getRange(celdaEncontrada.getRow(), 1, 1, hojaPreventa.getLastColumn()).getValues()[0];
-      
+
       const jornadaGuarda = String(fila[COL_PREVENTA_GUARDA - 1]).trim().toLowerCase();
       const jornadaPredefinida = (jornadaGuarda === 'si') ? 'Jornada Normal extendida' : 'Jornada Normal';
-      
+
       // Validar cupo para la jornada asignada
       if (jornadaPredefinida === 'Jornada Normal extendida' && estado.jornadaExtendidaAlcanzada) {
         return { status: 'LIMITE_EXTENDIDA', message: 'Su DNI de Pre-Venta corresponde a Jornada Extendida, pero el cupo ya se ha agotado. Por favor, contacte a la administración.' };
       }
-      
+
       const fechaNacimientoRaw = fila[COL_PREVENTA_FECHA_NAC - 1];
       const fechaNacimientoStr = (fechaNacimientoRaw instanceof Date) ? Utilities.formatDate(fechaNacimientoRaw, ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd') : '';
 
@@ -712,7 +727,8 @@ function validarAcceso(dni, tipoInscripto) {
           esPreventa: true // Flag para que el cliente sepa cómo actuar
         },
         jornadaExtendidaAlcanzada: estado.jornadaExtendidaAlcanzada,
-        tipoInscripto: tipoInscripto
+        tipoInscripto: tipoInscripto,
+        pagoTotalHabilitado: pagoTotalHabilitado // (NUEVO - PUNTO C)
       };
     }
 
@@ -726,7 +742,7 @@ function validarAcceso(dni, tipoInscripto) {
     const celdaEncontrada = rangoDNI.createTextFinder(dniLimpio).matchEntireCell(true).findNext();
 
     if (celdaEncontrada) { // DNI encontrado en Base de Datos (posible ANTERIOR)
-      
+
       // --- (INICIO BLOQUE PRE-VENTA - CORRECCIÓN) ---
       // (Punto 25) VALIDACIÓN CRUZADA: Si está en BD, pero también en Preventa, FORZAR a usar Pre-Venta.
       const hojaPreventa = ss.getSheetByName(NOMBRE_HOJA_PREVENTA);
@@ -776,11 +792,12 @@ function validarAcceso(dni, tipoInscripto) {
         },
         edad: calcularEdad(fechaNacimientoStr),
         jornadaExtendidaAlcanzada: estado.jornadaExtendidaAlcanzada,
-        tipoInscripto: tipoInscripto
+        tipoInscripto: tipoInscripto,
+        pagoTotalHabilitado: pagoTotalHabilitado // (NUEVO - PUNTO C)
       };
 
     } else { // DNI NO encontrado en Base de Datos (posible NUEVO)
-      
+
       // --- (INICIO BLOQUE PRE-VENTA - CORRECCIÓN) ---
       // (Punto 25) VALIDACIÓN CRUZADA: Si NO está en BD, pero SÍ en Preventa, FORZAR a usar Pre-Venta.
       const hojaPreventa = ss.getSheetByName(NOMBRE_HOJA_PREVENTA);
@@ -798,15 +815,16 @@ function validarAcceso(dni, tipoInscripto) {
         return { status: 'ERROR_TIPO_ANT', message: "No se encuentra en la base de datos de años anteriores. Por favor, seleccione 'Soy Nuevo Inscripto'." };
       }
       if (tipoInscripto === 'preventa') {
-         // Este caso ya fue manejado arriba, pero por si acaso.
-         return { status: 'ERROR_TIPO_ANT', message: `El DNI ${dniLimpio} no se encuentra en la base de datos de Pre-Venta.` };
+        // Este caso ya fue manejado arriba, pero por si acaso.
+        return { status: 'ERROR_TIPO_ANT', message: `El DNI ${dniLimpio} no se encuentra en la base de datos de Pre-Venta.` };
       }
       return {
         status: 'OK_NUEVO',
         message: '✅ DNI validado. Proceda al registro.',
         jornadaExtendidaAlcanzada: estado.jornadaExtendidaAlcanzada,
         tipoInscripto: tipoInscripto,
-        datos: { dni: dniLimpio, esPreventa: false }
+        datos: { dni: dniLimpio, esPreventa: false },
+        pagoTotalHabilitado: pagoTotalHabilitado // (NUEVO - PUNTO C)
       };
     }
 
@@ -819,71 +837,89 @@ function validarAcceso(dni, tipoInscripto) {
 
 // =========================================================
 // (CORRECCIÓN BUG HERMANO - ROBUSTA)
+// (NUEVO - PUNTO C) Añadido 'pagoTotalHabilitado'
+// (NUEVO - REQ 1) Añadido 'tipoInscripto' y validación estricta
 // =========================================================
-function gestionarUsuarioYaRegistrado(ss, hojaRegistro, filaRegistro, dniLimpio, estado) { // <-- (SOLUCIÓN) Acepta 'ss'
+function gestionarUsuarioYaRegistrado(ss, hojaRegistro, filaRegistro, dniLimpio, estado, pagoTotalHabilitado, tipoInscripto) { // <-- (MODIFICADO) Acepta 'tipoInscripto'
   const rangoFila = hojaRegistro.getRange(filaRegistro, 1, 1, hojaRegistro.getLastColumn()).getValues()[0];
 
   const estadoPago = rangoFila[COL_ESTADO_PAGO - 1];
   const metodoPago = rangoFila[COL_METODO_PAGO - 1];
   const nombreRegistrado = rangoFila[COL_NOMBRE - 1] + ' ' + rangoFila[COL_APELLIDO - 1];
   const estadoInscripto = rangoFila[COL_ESTADO_NUEVO_ANT - 1];
-  
+
   // (INICIO DE CORRECCIÓN - BUG HERMANO)
   // Se usa .trim() y .includes() para ser robusto contra espacios y mayúsculas/minúsculas.
   const estadoInscriptoTrim = estadoInscripto ? String(estadoInscripto).trim() : "";
-  
+
   // Lógica de HERMANO_COMPLETAR
   if (estadoInscriptoTrim.toLowerCase().includes('hermano/a')) {
-  // (FIN DE CORRECCIÓN)
-      let faltantes = [];
-      // (MODIFICACIÓN) Se revisan los campos que el hermano DEBE completar
-      if (!rangoFila[COL_COLEGIO_JARDIN - 1]) faltantes.push('Colegio / Jardín');
-      if (!rangoFila[COL_PRACTICA_DEPORTE - 1]) faltantes.push('Practica Deporte');
-      if (!rangoFila[COL_TIENE_ENFERMEDAD - 1]) faltantes.push('Enfermedad Preexistente');
-      if (!rangoFila[COL_ES_ALERGICO - 1]) faltantes.push('Alergias');
-      if (!rangoFila[COL_FOTO_CARNET - 1]) faltantes.push('Foto Carnet 4x4');
-      if (!rangoFila[COL_JORNADA - 1]) faltantes.push('Jornada');
-      if (!rangoFila[COL_SOCIO - 1]) faltantes.push('Es Socio'); // (PUNTO 27) Añadido
-      if (!rangoFila[COL_METODO_PAGO - 1]) faltantes.push('Método de Pago');
 
-      // (MODIFICACIÓN) Se revisan los campos que DEBERÍAN estar pre-rellenados
-      // Con la corrección en 'registrarDatos', 'COL_EMAIL' ahora debería estar lleno.
-      if (!rangoFila[COL_EMAIL - 1]) faltantes.push('Email'); 
-      if (!rangoFila[COL_ADULTO_RESPONSABLE_1 - 1]) faltantes.push('Responsable 1');
-      if (!rangoFila[COL_PERSONAS_AUTORIZADAS - 1]) faltantes.push('Personas Autorizadas');
-      
-      const datos = {
-          dni: dniLimpio,
-          nombre: rangoFila[COL_NOMBRE - 1],
-          apellido: rangoFila[COL_APELLIDO - 1],
-          // (SOLUCIÓN AL ERROR) Usa 'ss.getSpreadsheetTimeZone()' en lugar de 'SpreadsheetApp.getActive()'
-          fechaNacimiento: rangoFila[COL_FECHA_NACIMIENTO_REGISTRO - 1] ? Utilities.formatDate(new Date(rangoFila[COL_FECHA_NACIMIENTO_REGISTRO - 1]), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd') : '',
-          
-          // (MODIFICACIÓN) Estos campos ahora SÍ vendrán de la hoja
-          email: rangoFila[COL_EMAIL - 1] || '',
-          adultoResponsable1: rangoFila[COL_ADULTO_RESPONSABLE_1 - 1] || '',
-          dniResponsable1: rangoFila[COL_DNI_RESPONSABLE_1 - 1] || '',
-          telResponsable1: rangoFila[COL_TEL_RESPONSABLE_1 - 1] || '',
-          adultoResponsable2: rangoFila[COL_ADULTO_RESPONSABLE_2 - 1] || '',
-          telResponsable2: rangoFila[COL_TEL_RESPONSABLE_2 - 1] || '',
-          personasAutorizadas: rangoFila[COL_PERSONAS_AUTORIZADAS - 1] || '',
-          obraSocial: rangoFila[COL_OBRA_SOCIAL - 1] || '',
-          
-          // Este campo (Colegio) se mantiene vacío a propósito (según tu lógica)
-          colegioJardin: rangoFila[COL_COLEGIO_JARDIN - 1] || ''
-      };
-      
-      // Ya sea que falten campos por llenar o no (ej. si vuelve a validar),
-      // se le muestra el formulario para completar/revisar.
-      return {
-          status: 'HERMANO_COMPLETAR',
-          message: `⚠️ ¡Hola ${datos.nombre}! Eres un hermano/a pre-registrado.\n` +
-            `Por favor, complete/verifique TODOS los campos del formulario para obtener el cupo definitivo y el link para pagar.\n` +
-            (faltantes.length > 0 ? `Campos requeridos faltantes detectados: <strong>${faltantes.join(', ')}</strong>.` : 'Todos los campos parecen estar listos para verificar.'),
-          datos: datos,
-          jornadaExtendidaAlcanzada: estado.jornadaExtendidaAlcanzada,
-          tipoInscripto: estadoInscripto
-      };
+    // --- (NUEVO - REQ 1) VALIDACIÓN ESTRICTA DE HERMANO ---
+    const estadoTrimLower = estadoInscriptoTrim.toLowerCase();
+
+    if (estadoTrimLower.includes('nuevo') && tipoInscripto !== 'nuevo') {
+      return { status: 'ERROR', message: 'Usted está registrado como "Nuevo Hermano/a". Por favor, seleccione "Soy Nuevo Inscripto" para validar.' };
+    }
+    if (estadoTrimLower.includes('anterior') && tipoInscripto !== 'anterior') {
+      return { status: 'ERROR', message: 'Usted está registrado como "Anterior Hermano/a". Por favor, seleccione "Soy Inscripto Anterior" para validar.' };
+    }
+    if (estadoTrimLower.includes('pre-venta') && tipoInscripto !== 'preventa') {
+      return { status: 'ERROR', message: 'Usted está registrado como "Pre-venta Hermano/a". Por favor, seleccione "Soy Inscripto PRE-VENTA" para validar.' };
+    }
+    // --- (FIN NUEVO - REQ 1) ---
+
+    // (FIN DE CORRECCIÓN)
+    let faltantes = [];
+    // (MODIFICACIÓN) Se revisan los campos que el hermano DEBE completar
+    if (!rangoFila[COL_COLEGIO_JARDIN - 1]) faltantes.push('Colegio / Jardín');
+    if (!rangoFila[COL_PRACTICA_DEPORTE - 1]) faltantes.push('Practica Deporte');
+    if (!rangoFila[COL_TIENE_ENFERMEDAD - 1]) faltantes.push('Enfermedad Preexistente');
+    if (!rangoFila[COL_ES_ALERGICO - 1]) faltantes.push('Alergias');
+    if (!rangoFila[COL_FOTO_CARNET - 1]) faltantes.push('Foto Carnet 4x4');
+    if (!rangoFila[COL_JORNADA - 1]) faltantes.push('Jornada');
+    if (!rangoFila[COL_SOCIO - 1]) faltantes.push('Es Socio'); // (PUNTO 27) Añadido
+    if (!rangoFila[COL_METODO_PAGO - 1]) faltantes.push('Método de Pago');
+
+    // (MODIFICACIÓN) Se revisan los campos que DEBERÍAN estar pre-rellenados
+    // Con la corrección en 'registrarDatos', 'COL_EMAIL' ahora debería estar lleno.
+    if (!rangoFila[COL_EMAIL - 1]) faltantes.push('Email');
+    if (!rangoFila[COL_ADULTO_RESPONSABLE_1 - 1]) faltantes.push('Responsable 1');
+    if (!rangoFila[COL_PERSONAS_AUTORIZADAS - 1]) faltantes.push('Personas Autorizadas');
+
+    const datos = {
+      dni: dniLimpio,
+      nombre: rangoFila[COL_NOMBRE - 1],
+      apellido: rangoFila[COL_APELLIDO - 1],
+      // (SOLUCIÓN AL ERROR) Usa 'ss.getSpreadsheetTimeZone()' en lugar de 'SpreadsheetApp.getActive()'
+      fechaNacimiento: rangoFila[COL_FECHA_NACIMIENTO_REGISTRO - 1] ? Utilities.formatDate(new Date(rangoFila[COL_FECHA_NACIMIENTO_REGISTRO - 1]), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd') : '',
+
+      // (MODIFICACIÓN) Estos campos ahora SÍ vendrán de la hoja
+      email: rangoFila[COL_EMAIL - 1] || '',
+      adultoResponsable1: rangoFila[COL_ADULTO_RESPONSABLE_1 - 1] || '',
+      dniResponsable1: rangoFila[COL_DNI_RESPONSABLE_1 - 1] || '',
+      telResponsable1: rangoFila[COL_TEL_RESPONSABLE_1 - 1] || '',
+      adultoResponsable2: rangoFila[COL_ADULTO_RESPONSABLE_2 - 1] || '',
+      telResponsable2: rangoFila[COL_TEL_RESPONSABLE_2 - 1] || '',
+      personasAutorizadas: rangoFila[COL_PERSONAS_AUTORIZADAS - 1] || '',
+      obraSocial: rangoFila[COL_OBRA_SOCIAL - 1] || '',
+
+      // Este campo (Colegio) se mantiene vacío a propósito (según tu lógica)
+      colegioJardin: rangoFila[COL_COLEGIO_JARDIN - 1] || ''
+    };
+
+    // Ya sea que falten campos por llenar o no (ej. si vuelve a validar),
+    // se le muestra el formulario para completar/revisar.
+    return {
+      status: 'HERMANO_COMPLETAR',
+      message: `⚠️ ¡Hola ${datos.nombre}! Eres un hermano/a pre-registrado.\n` +
+        `Por favor, complete/verifique TODOS los campos del formulario para obtener el cupo definitivo y el link para pagar.\n` +
+        (faltantes.length > 0 ? `Campos requeridos faltantes detectados: <strong>${faltantes.join(', ')}</strong>.` : 'Todos los campos parecen estar listos para verificar.'),
+      datos: datos,
+      jornadaExtendidaAlcanzada: estado.jornadaExtendidaAlcanzada,
+      tipoInscripto: estadoInscripto,
+      pagoTotalHabilitado: pagoTotalHabilitado // (NUEVO - PUNTO C)
+    };
   }
 
   // Lógica de REGISTRO_ENCONTRADO (Repago, Subir comprobante, etc.)
@@ -891,114 +927,126 @@ function gestionarUsuarioYaRegistrado(ss, hojaRegistro, filaRegistro, dniLimpio,
   const adeudaAptitud = !aptitudFisica;
   const cantidadCuotasRegistrada = parseInt(rangoFila[COL_CANTIDAD_CUOTAS - 1]) || 0;
   let proximaCuotaPendiente = null;
-  
+
   // --- (MODIFICACIÓN CRÍTICA) ---
   // Se cambia 'estadoPago === 'Pagado'' por 'String(estadoPago).includes('Pagado')'
   // Esto captura "Pagado", " Pagado", "Pagado." etc. y previene el repago.
   if (String(estadoPago).includes('Pagado')) {
-      return { 
-        status: 'REGISTRO_ENCONTRADO', 
-        message: `✅ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO y la inscripción está PAGADA.`, 
-        adeudaAptitud: adeudaAptitud,
-        cantidadCuotas: cantidadCuotasRegistrada,
-        metodoPago: metodoPago,
-        proximaCuotaPendiente: null
-      };
+    return {
+      status: 'REGISTRO_ENCONTRADO',
+      message: `✅ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO y la inscripción está PAGADA.`,
+      adeudaAptitud: adeudaAptitud,
+      cantidadCuotas: cantidadCuotasRegistrada,
+      metodoPago: metodoPago,
+      proximaCuotaPendiente: null
+    };
   }
 
   // --- (NUEVA MODIFICACIÓN) ---
   // Si está "En revisión" (porque ya subió un comprobante), mostrar solo el mensaje.
   // No intentar generar link de pago ni mostrar el uploader.
   if (String(estadoPago).includes('En revisión')) {
-      return {
-          status: 'REGISTRO_ENCONTRADO',
-          message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. Su pago está "En revisión".`,
-          adeudaAptitud: adeudaAptitud,
-          cantidadCuotas: cantidadCuotasRegistrada,
-          metodoPago: metodoPago,
-          proximaCuotaPendiente: null
-      };
+    return {
+      status: 'REGISTRO_ENCONTRADO',
+      message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. Su pago está "En revisión".`,
+      adeudaAptitud: adeudaAptitud,
+      cantidadCuotas: cantidadCuotasRegistrada,
+      metodoPago: metodoPago,
+      proximaCuotaPendiente: null
+    };
   }
-  
+
   if (String(metodoPago).includes('Efectivo') || String(metodoPago).includes('Transferencia')) {
-      return {
-          status: 'REGISTRO_ENCONTRADO',
-          message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. El pago (${metodoPago}) está PENDIENTE.`,
-          adeudaAptitud: adeudaAptitud,
-          cantidadCuotas: cantidadCuotasRegistrada,
-          metodoPago: metodoPago,
-          proximaCuotaPendiente: null
-      };
+    return {
+      status: 'REGISTRO_ENCONTRADO',
+      message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. El pago (${metodoPago}) está PENDIENTE.`,
+      adeudaAptitud: adeudaAptitud,
+      cantidadCuotas: cantidadCuotasRegistrada,
+      metodoPago: metodoPago,
+      proximaCuotaPendiente: null
+    };
   }
 
   // Lógica de repago...
   try {
-      const datosParaPago = {
-          dni: dniLimpio,
-          apellidoNombre: nombreRegistrado,
-          email: rangoFila[COL_EMAIL - 1],
-          metodoPago: metodoPago,
-          jornada: rangoFila[COL_JORNADA - 1]
-      };
-      let identificadorPago = null;
-      if (metodoPago === 'Pago en Cuotas') {
-        for (let i = 1; i <= cantidadCuotasRegistrada; i++) {
-          let colCuota = i === 1 ? COL_CUOTA_1 : (i === 2 ? COL_CUOTA_2 : COL_CUOTA_3);
-          let cuota_status = rangoFila[colCuota - 1];
-          if (!cuota_status || (!cuota_status.toString().includes("Pagada") && !cuota_status.toString().includes("Notificada"))) {
-            identificadorPago = `C${i}`;
-            proximaCuotaPendiente = identificadorPago;
-            break;
-          }
-        }
-        if (identificadorPago == null) {
-          // Si todas las cuotas están pagadas, pero el estado general (AI) no es "Pagado"
-          // (porque quizás falta aptitud, etc.), igual lo tratamos como pagado.
-          return {
-            status: 'REGISTRO_ENCONTRADO',
-            message: `✅ El DNI ${dniLimpio} (${nombreRegistrado}) ya completó todas las cuotas.`,
-            adeudaAptitud: adeudaAptitud,
-            cantidadCuotas: cantidadCuotasRegistrada,
-            metodoPago: metodoPago,
-            proximaCuotaPendiente: null
-          };
+    const datosParaPago = {
+      dni: dniLimpio,
+      apellidoNombre: nombreRegistrado,
+      email: rangoFila[COL_EMAIL - 1],
+      metodoPago: metodoPago,
+      jornada: rangoFila[COL_JORNADA - 1]
+    };
+    let identificadorPago = null;
+    if (metodoPago === 'Pago en Cuotas') {
+      for (let i = 1; i <= cantidadCuotasRegistrada; i++) {
+        let colCuota = i === 1 ? COL_CUOTA_1 : (i === 2 ? COL_CUOTA_2 : COL_CUOTA_3);
+        let cuota_status = rangoFila[colCuota - 1];
+        if (!cuota_status || (!cuota_status.toString().includes("Pagada") && !cuota_status.toString().includes("Notificada"))) {
+          identificadorPago = `C${i}`;
+          proximaCuotaPendiente = identificadorPago;
+          break;
         }
       }
-      
-      const init_point = crearPreferenciaDePago(datosParaPago, identificadorPago, cantidadCuotasRegistrada);
-      
-      if (!init_point || !init_point.toString().startsWith('http')) {
+      if (identificadorPago == null) {
+        // Si todas las cuotas están pagadas, pero el estado general (AI) no es "Pagado"
+        // (porque quizás falta aptitud, etc.), igual lo tratamos como pagado.
         return {
           status: 'REGISTRO_ENCONTRADO',
-          message: `⚠️ Error al generar link: ${init_point}`,
+          message: `✅ El DNI ${dniLimpio} (${nombreRegistrado}) ya completó todas las cuotas.`,
           adeudaAptitud: adeudaAptitud,
           cantidadCuotas: cantidadCuotasRegistrada,
           metodoPago: metodoPago,
-          proximaCuotaPendiente: proximaCuotaPendiente,
-          error_init_point: init_point
+          proximaCuotaPendiente: null
         };
       }
-      
-      return {
+    } else if (metodoPago === 'Pago 1 Cuota Deb/Cred MP(Total)') {
+      // (NUEVO - PUNTO C) Si el pago total está deshabilitado por B22, no generar link.
+      if (pagoTotalHabilitado === false) {
+        return {
           status: 'REGISTRO_ENCONTRADO',
-          message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. Se generó un link para la próxima cuota pendiente (${identificadorPago || 'Pago Total'}).`,
-          init_point: init_point,
+          message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya está REGISTRADO. El pago (${metodoPago}) está PENDIENTE, pero la opción de pago online está desactivada.`,
           adeudaAptitud: adeudaAptitud,
           cantidadCuotas: cantidadCuotasRegistrada,
           metodoPago: metodoPago,
-          proximaCuotaPendiente: proximaCuotaPendiente
+          proximaCuotaPendiente: null
+        };
+      }
+    }
+
+    const init_point = crearPreferenciaDePago(datosParaPago, identificadorPago, cantidadCuotasRegistrada);
+
+    if (!init_point || !init_point.toString().startsWith('http')) {
+      return {
+        status: 'REGISTRO_ENCONTRADO',
+        message: `⚠️ Error al generar link: ${init_point}`,
+        adeudaAptitud: adeudaAptitud,
+        cantidadCuotas: cantidadCuotasRegistrada,
+        metodoPago: metodoPago,
+        proximaCuotaPendiente: proximaCuotaPendiente,
+        error_init_point: init_point
       };
+    }
+
+    return {
+      status: 'REGISTRO_ENCONTRADO',
+      message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya se encuentra REGISTRADO. Se generó un link para la próxima cuota pendiente (${identificadorPago || 'Pago Total'}).`,
+      init_point: init_point,
+      adeudaAptitud: adeudaAptitud,
+      cantidadCuotas: cantidadCuotasRegistrada,
+      metodoPago: metodoPago,
+      proximaCuotaPendiente: proximaCuotaPendiente
+    };
   } catch (e) {
-      Logger.log(`Error al generar link de repago para DNI ${dniLimpio}: ${e.message}`);
-      return {
-          status: 'REGISTRO_ENCONTRADO',
-          message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya está REGISTRADO. Pago PENDIENTE, pero error al generar link: ${e.message}`,
-          adeudaAptitud: adeudaAptitud,
-          cantidadCuotas: cantidadCuotasRegistrada,
-          metodoPago: metodoPago,
-          proximaCuotaPendiente: proximaCuotaPendiente,
-          error_init_point: e.message
-      };
+    Logger.log(`Error al generar link de repago para DNI ${dniLimpio}: ${e.message}`);
+    return {
+      status: 'REGISTRO_ENCONTRADO',
+      message: `⚠️ El DNI ${dniLimpio} (${nombreRegistrado}) ya está REGISTRADO. Pago PENDIENTE, pero error al generar link: ${e.message}`,
+      adeudaAptitud: adeudaAptitud,
+      cantidadCuotas: cantidadCuotasRegistrada,
+      metodoPago: metodoPago,
+      proximaCuotaPendiente: proximaCuotaPendiente,
+      error_init_point: e.message
+    };
   }
 }
 
@@ -1111,14 +1159,14 @@ function subirComprobanteManual(dni, fileData, tipoComprobante, datosExtras) {
     if (!dniLimpio || !fileData || !tipoComprobante) {
       return { status: 'ERROR', message: 'Faltan datos (DNI, archivo o tipo de comprobante).' };
     }
-    
+
     // Validar que los datos del pagador (datosExtras) llegaron
     // (Validación DNI Punto 35)
     if (!datosExtras || !datosExtras.nombrePagador || !datosExtras.dniPagador) {
-        return { status: 'ERROR', message: 'Faltan los datos del adulto pagador (Nombre o DNI).' };
+      return { status: 'ERROR', message: 'Faltan los datos del adulto pagador (Nombre o DNI).' };
     }
     if (!/^[0-9]{8}$/.test(datosExtras.dniPagador)) {
-       return { status: 'ERROR', message: 'El DNI del pagador debe tener 8 dígitos.' };
+      return { status: 'ERROR', message: 'El DNI del pagador debe tener 8 dígitos.' };
     }
 
 
@@ -1169,7 +1217,7 @@ function subirComprobanteManual(dni, fileData, tipoComprobante, datosExtras) {
 
       // 3. Guardar SOLO el link en la columna de archivo correspondiente
       hoja.getRange(fila, columnaDestinoArchivo).setValue(fileUrl);
-      
+
       // 4. Actualizar estado
       hoja.getRange(fila, COL_ESTADO_PAGO).setValue("En revisión");
 

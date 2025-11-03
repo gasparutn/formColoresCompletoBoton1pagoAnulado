@@ -83,8 +83,8 @@
             <input type="tel" id="telNumResp1" name="telNumResp1" class="telefono-numero form-cache" placeholder="Número (sin 15)" required pattern="^[0-9]{6,10}$" title="Ingrese el número de teléfono sin el 15 inicial.">
           </div>
 
-          <label for="adultoResponsable2">Responsable 2: (Nombre y Apellido) (Opcional)</label>
-          <input type="text" id="adultoResponsable2" name="adultoResponsable2" class="form-cache">
+          <label for="adultoResponsable2">Responsable 2:(Opcional)</label>
+          <input type="text" id="adultoResponsable2" name="adultoResponsable2" class="form-cache" placeholder="Nombre y Apellido">
 
           <label for="telAreaResp2">Teléfono Responsable 2: (Opcional)</label>
           <div class="grupo-telefono">
@@ -93,7 +93,7 @@
           </div>
 
           <label for="email">Email (Contacto Principal 1):</label>
-          <input type="email" id="email" name="email" class="form-cache" required>
+          <input type="email" id="email" name="email" class="form-cache" placeholder="micorreo@midominio.com" required>
 
           <label style="margin-top: 20px;">Personas autorizadas a retirar: (Mínimo 1)</label>
           <div id="autorizados-container">
@@ -170,7 +170,7 @@
 <option value="Jornada Normal">Jornada Normal</option>
 <option value="Jornada Normal extendida" id="opcion-jornada-extendida">Jornada Normal Extendida</option>
 </select>
-          
+
           <label for="metodoPago">Seleccione el Método de Pago</label>
           <select id="metodoPago" name="metodoPago" class="form-cache" required>
             <option value="">-- Por favor, elija una opción --</option>
@@ -184,16 +184,24 @@
             <p>TITULAR DE LA CUENTA: <strong>Walter Jonas Marrello</strong></p>
             <p>Alias: <strong id="alias-transferencia">clubhipicomendoza</strong></p>
             <button type="button" id="btn-copiar-alias">Copiar Alias</button>
-            <p style="margin-top: 10px; font-size: 0.9em;">Luego de transferir, deberá volver a ingresar con su DNI para subir el comprobante.</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Luego de transferir, deberá volver a ingresar con su DNI para
+              subir el comprobante.</p>
           </div>
-          
-          <div id="cuotas-info">
-            <p><strong>Fechas de Vencimiento de Cuotas:</strong></p>
-            <p><strong>1ª cuota:</strong> del 1 al 10 de noviembre 2025</p>
-            <p><strong>2ª cuota:</strong> del 1 al 10 de diciembre 2025</p>
-            <p><strong>3ª cuota:</strong> del 1 al 10 de enero 2026</p>
+
+          <div id="cuotas-transferencia-info" style="display: none;">
+            <p>El pago de las cuotas puede ser en efectivo si lo desea, acérquese por Secretaría del Club o pague por
+              transferencia a la siguiente cuenta:</p>
+            <p><strong>TITULAR DE LA CUENTA:</strong> <strong>Walter Jonas Marrello</strong></p>
+            <p><strong>Alias:</strong> <strong id="alias-transferencia-cuotas">clubhipicomendoza</strong></p>
+            <button type="button" id="btn-copiar-alias-cuotas">Copiar Alias</button>
+
+            <p class="cuotas-fechas" style="margin-top: 15px;"><strong>Fechas de Vencimiento de Cuotas:</strong></p>
+            <p class="cuotas-fechas"><strong>1ª cuota:</strong> del 1 al 10 de noviembre 2025</p>
+            <p class="cuotas-fechas"><strong>2ª cuota:</strong> del 1 al 10 de diciembre 2025</p>
+            <p class="cuotas-fechas"><strong>3ª cuota:</strong> del 1 al 10 de enero 2026</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Luego de transferir, deberá volver a ingresar con su DNI para
+              validar y después subir el comprobante</p>
           </div>
-          
         </div>
 
         <button type="submit" id="submit-button">Registrar y Continuar</button>
